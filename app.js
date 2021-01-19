@@ -5,9 +5,7 @@ var logger = require("morgan");
 var bodyParser = require("body-parser");
 
 const db = require("./config/database");
-
-var indexRouter = require("./routes/index");
-var usersRouter = require("./routes/users");
+const Place = require("./models/Place")
 
 db.connect();
 
@@ -18,8 +16,65 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", indexRouter);
-app.use("/users", usersRouter);
+app.post('/places', (req, res) => {
+  Place.create({
+    title: req.body.title,
+    description: req.body.description,
+    acceptsCreditCard: req.body.acceptsCreditCard,
+    openHour: req.body.openHour,
+    closeHour: req.body.closeHour
+  }).then(doc => {
+    res.json(doc)
+  }).catch(err => {
+    es.json(err)
+  })
+})
+
+app.get('/places', (req, res) => {
+  Place.find({})
+  .then(docs=>{
+    res.json(docs)
+  }).catch(err => {
+    es.json(err)
+  })
+})
+
+app.get('/places/:id', (req, res)=> {
+  Place.findOne({})
+  .then(doc => {
+    res.json(doc)
+  }).catch(err => {
+    res.json(err)
+  })
+})
+
+app.put('/places/:id', (req, res)=> {
+
+  let attributes = ['title', 'description', 'acceptsCreditCard', 'openHour', 'closeHour']
+  let placeParams = {}
+
+  attributes.forEach(attr => {
+    if(Object.prototype.hasOwnProperty.call(req.body, attr))
+      placeParams[attr] = req.body[attr]
+  })
+
+  Place.findByIdAndUpdate({'_id': req.params.id}, placeParams, {new: true})
+  .then(doc => {
+    res.json(doc)
+  }).catch(err => {
+    console.log(err)
+    res.json(err)
+  })
+})
+
+app.delete('/places/:id', (req, res) => {
+  Place.findByIdAndRemove(req.params.id)
+  .then(doc => {
+    res.json({})
+  }).catch(err => {
+    res.json(err)
+  })
+})
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
